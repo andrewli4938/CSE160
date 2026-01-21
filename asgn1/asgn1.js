@@ -84,13 +84,26 @@ function main() {
 }
 
 var g_shapes_list = [];
+
+// Constants
+const POINT = 0;
+const TRIANGLE = 1;
+const CIRCLE = 2;
+
 // Globals related to UI elements
 let g_selected_color = [1.0, 1.0, 1.0, 1.0];
-let g_selected_size=10;
+let g_selected_size= 10;
+let g_selected_segments = 10;
+let g_selected_type = POINT;
 
 function addActionsForHtmlUI() {
   // Clear button event
   document.getElementById('clear-button').addEventListener('mousedown', (e) => { g_shapes_list = []; renderAllShapes();});
+
+  // Shape selector buttons
+  document.getElementById('squares-button').addEventListener('mousedown', (e) => { g_selected_type = POINT });
+  document.getElementById('triangles-button').addEventListener('mousedown', (e) => { g_selected_type = TRIANGLE });
+  document.getElementById('circles-button').addEventListener('mousedown', (e) => { g_selected_type = CIRCLE });
 
   // Color slider events
   document.getElementById('red-slider').addEventListener('mouseup', (e) => { g_selected_color[0] = e.currentTarget.value });
@@ -98,8 +111,10 @@ function addActionsForHtmlUI() {
   document.getElementById('blue-slider').addEventListener('mouseup', (e) => { g_selected_color[2] = e.currentTarget.value });
 
   // Size slider events
-  document.getElementById('shape-size-slider').addEventListener('mouseup', (e) => { g_selected_size = e.currentTarget.value })
-
+  document.getElementById('shape-size-slider').addEventListener('mouseup', (e) => { g_selected_size = e.currentTarget.value });
+  
+  // Segment slider event
+  document.getElementById('segment-count-slider').addEventListener('mouseup', (e) => { g_selected_segments = e.currentTarget.value });
   
 }
 
@@ -111,20 +126,20 @@ function click(ev) {
   
   let [x, y] = convertCoordinatesEventToGL(ev);
 
-  let point = new Point();
+  let point;
+  if (g_selected_type==POINT) {
+    point = new Point();
+  } else if (g_selected_type==TRIANGLE) {
+    point = new Triangle();
+  } else {
+    point = new Circle();
+    point.segments = g_selected_segments;
+  }
+
   point.position = [x, y];
   point.color = g_selected_color.slice();
   point.size = g_selected_size;
   g_shapes_list.push(point);
-
-  // // Store the coordinates to g_points array
-  // g_points.push([x, y]);
-
-  // // Store the color to g_colors array
-  // g_colors.push(g_selected_color.slice());
-
-  // // Store the size to g_sizes array
-  // g_sizes.push(g_selected_size);
 
   renderAllShapes();
 }
