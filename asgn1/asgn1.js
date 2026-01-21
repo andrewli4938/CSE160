@@ -97,6 +97,10 @@ let g_selected_segments = 10;
 let g_selected_type = POINT;
 
 function addActionsForHtmlUI() {
+  // Play game button event
+  document.getElementById('game-button').addEventListener('mousedown', (e) => { startGame(100) });
+  document.getElementById('game-end-button').addEventListener('mousedown', (e) => { endGame() });
+
   // Clear button event
   document.getElementById('clear-button').addEventListener('mousedown', (e) => { g_shapes_list = []; renderAllShapes();});
   
@@ -218,4 +222,51 @@ function drawPicture() {
   // eye
   setColor(BLACK);
   drawTriangle([0.4, 0.04,  0.4, 0.08,  0.45, 0.06]);
+}
+
+
+
+function randomNum(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+let target_offset;
+let target_x;
+let target_y;
+let score = 0;
+function startGame(size) {
+  document.getElementById('game-results').hidden = true;
+  document.getElementById('game-start').hidden = true;
+  document.getElementById('game-end').hidden = true;
+  // get a random position on the canvas
+  target_x = randomNum(-1, 1);
+  target_y = randomNum(-1, 1);
+  
+  // define the target area
+  target_offset = size/100.0;
+  canvas.onmousedown = gameClick;
+
+  document.getElementById('game-start').hidden = false;
+}
+
+function endGame() {
+  canvas.onmousedown = click;
+  document.getElementById('game-results').hidden = true;
+  document.getElementById('game-start').hidden = true;
+  document.getElementById('game-end').hidden = false;
+  score = 0;
+}
+
+function gameClick(ev) {
+  [x, y] = convertCoordinatesEventToGL(ev);
+  if (x > target_x-target_offset && x < target_x+target_offset && y > target_y-target_offset && y < target_y+target_offset) {
+    let score_text = document.getElementById('score-text')
+    score_text.textContent = score;
+
+    document.getElementById('game-results').hidden = false;
+
+    canvas.onmousedown = click;
+  }
+  
+  score += 1;
 }

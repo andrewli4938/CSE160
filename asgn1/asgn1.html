@@ -8,7 +8,7 @@
   <body onload="main()">
     <p>Andrew Li</p>
     <p>ali175@ucsc.edu</p>
-    
+
     <canvas id="webgl" width="400" height="400">
     Please use a browser that supports "canvas"
     </canvas>
@@ -23,8 +23,23 @@
     <script src="Triangle.js"></script>
     <script src="Circle.js"></script>
 
+    <br>
+    <button type="button" id="game-button">Play Game</button><br>
+    <button type="button" id="game-end-button">End Game</button><br>
+    <div id="game-start" hidden>
+      <p>Game Started! Click around until you find the target, try to get the lowest score!</p>
+    </div><br>
+    <div id="game-end" hidden>
+      <p>Game Ended!</p>
+    </div><br>
+    <div id="game-results" hidden>
+      <p>YOU WIN!</p>
+      <span>Your score is: </span>
+      <span id="score-text">mil</span>
+    </div><br>
+
     <br><br>
-    <button type="button" id="paint-button">Paint Refernce Drawing</button>
+    <button type="button" id="paint-button">Paint Reference Drawing</button>
     <button type="button" id="clear-button">Clear</button>
 
     <br><br>
