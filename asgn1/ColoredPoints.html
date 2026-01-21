@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Change a point color</title>
+  </head>
+
+  <body onload="main()">
+    <canvas id="webgl" width="400" height="400">
+    Please use a browser that supports "canvas"
+    </canvas>
+
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+    <script src="ColoredPoints.js"></script>
+    <script src="Point.js"></script>
+    <script src="Triangle.js"></script>
+
+    <br><br>
+    <button type="button" id="clear-button">Clear</button>
+
+    <br><br>
+    <label>Drawing Mode:</label><br>
+    <button type="button" id="squares-button">Squares</button>
+    <button type="button" id="triangles-button">Triangles</button>
+    <button type="button" id="circles-button">Circles</button>
+
+    <br><br>
+    <label>Shape Color:</label><br>
+    <label for="red-slider">Red</label>
+    <input id="red-slider" type="range" min="0" max="1" value="1" step="0.01">
+    <label for="green-slider">Green</label>
+    <input id="green-slider" type="range" min="0" max="1" value="1" step="0.01">
+    <label for="blue-slider">Blue</label>
+    <input id="blue-slider" type="range" min="0" max="1" value="1" step="0.01">
+
+    <br><br>
+    <label for="shape-size-slider">Shape Size:</label>
+    <input id="shape-size-slider" type="range" min="0" max="100" value="10">
+
+    <br><br>
+    <label for="segment-count-slider">(Cirles) Segment Count:</label>
+    <input id="segment-count-slider" type="range" min="0" max="100" value="0">
+
+
+  </body>
+</html>
