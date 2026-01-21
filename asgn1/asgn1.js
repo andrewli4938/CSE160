@@ -99,6 +99,9 @@ let g_selected_type = POINT;
 function addActionsForHtmlUI() {
   // Clear button event
   document.getElementById('clear-button').addEventListener('mousedown', (e) => { g_shapes_list = []; renderAllShapes();});
+  
+  // Paint picture event
+  document.getElementById('paint-button').addEventListener('mousedown', (e) => { drawPicture() });
 
   // Shape selector buttons
   document.getElementById('squares-button').addEventListener('mousedown', (e) => { g_selected_type = POINT });
@@ -115,7 +118,6 @@ function addActionsForHtmlUI() {
   
   // Segment slider event
   document.getElementById('segment-count-slider').addEventListener('mouseup', (e) => { g_selected_segments = e.currentTarget.value });
-  
 }
 
 var g_points = [];  // The array for the position of a mouse press
@@ -163,4 +165,57 @@ function renderAllShapes() {
   for(var i = 0; i < len; i++) {
     g_shapes_list[i].render();
   }
+}
+
+function setColor([r, g, b, a]) {
+  gl.uniform4f(u_FragColor, r, g, b, a);
+}
+
+const RED = [1.0, 0.0, 0.0, 1.0];
+const GREEN = [0.0, 0.5, 0.0, 1.0];
+const PURPLE = [0.5, 0.0, 0.5, 1.0];
+const BLACK = [0.0, 0.0, 0.0, 1.0];
+
+
+function drawPicture() {
+  // butt
+  setColor(PURPLE);
+  drawTriangle([-0.8, 0.0,  -0.8, 0.2,  -0.9, 0.1]);
+  drawTriangle([-0.8, 0.0,  -0.8, -0.2,   -0.9, -0.1]);
+  
+  drawTriangle([-0.8, 0.2,  -0.8, -0.2,   -0.6, -0.2]);
+  drawTriangle([-0.8, 0.2,   -0.6, 0.2,   -0.6, -0.2]);
+  
+  drawTriangle([-0.8, 0.2,  -0.6, 0.2,  -0.6, 0.4]);
+  drawTriangle([-0.8, -0.2,  -0.6, -0.2,  -0.6, -0.4]);
+  
+  // body
+  drawTriangle([-0.6, 0.4,  -0.6, -0.4,   0.2, -0.4]);
+  drawTriangle([-0.6, 0.4,  0.2, 0.4,   0.2, -0.4]);
+  
+  // head
+  drawTriangle([0.2, 0.4,   0.2, 0.2,   0.6, 0.2]);
+  drawTriangle([0.2, 0.2,   0.6, 0.2,   0.6, -0.2]);
+  drawTriangle([0.6, -0.2,  0.2, -0.2,  0.2, 0.2]);
+  
+  // mouth
+  drawTriangle([0.2, -0.2,  0.2, -0.4,  0.55, -0.3]);
+  drawTriangle([0.2, -0.2,  0.6, -0.2,  0.55, -0.25]);
+  
+  // top fin
+  setColor(GREEN);
+  drawTriangle([-0.6, 0.4,  -0.2, 0.4,  -0.4, 0.5]);
+  drawTriangle([-0.4, 0.5, -0.2, 0.4,   0, 0.5]);
+  drawTriangle([-0.2, 0.4,  0, 0.5,   0.2, 0.4]);
+  
+  // tail
+  drawTriangle([-1.0, 0.0,  -0.8, 0.0,  -1.0, 0.2]);
+  drawTriangle([-1.0, 0.0,  -0.8, 0.0,  -1.0, -0.2]);
+
+  // side fin
+  drawTriangle([-0.2, -0.1,   -0.2, -0.2,  -0.38, -0.15]);
+
+  // eye
+  setColor(BLACK);
+  drawTriangle([0.4, 0.04,  0.4, 0.08,  0.45, 0.06]);
 }
