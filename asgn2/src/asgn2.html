@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Change a point color</title>
+  </head>
+
+  <body onload="main()">
+    <p>Andrew Li</p>
+    <p>ali175@ucsc.edu</p>
+
+    <canvas id="webgl" width="400" height="400">
+    Please use a browser that supports "canvas"
+    </canvas>
+
+
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+    <script src="../lib/cuon-matrix.js"></script>
+    <script src="asgn2.js"></script>
+    <script src="Point.js"></script>
+    <script src="Triangle.js"></script>
+    <script src="Circle.js"></script>
+    <script src="Cube.js"></script>
+
+    <br><br>
+    <button type="button" id="paint-button">Paint Reference Drawing</button>
+    <button type="button" id="clear-button">Clear</button>
+
+    <br><br>
+    <label for="camera-angle-slider">Camera Angle:</label>
+    <input id="camera-angle-slider" type="range" min="-90" max="135" value="0">
+
+
+  </body>
+</html>
