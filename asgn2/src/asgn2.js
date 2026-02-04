@@ -1,20 +1,31 @@
-// ColoredPoint.js (c) 2012 matsuda
+
 // Vertex shader program
 var VSHADER_SOURCE = `
-  attribute vec4 a_Position;
-  uniform mat4 u_ModelMatrix;
-  uniform mat4 u_GlobalRotateMatrix;
-  void main() {
-    gl_Position = u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
+attribute vec4 a_Position;
+uniform mat4 u_ModelMatrix;
+uniform mat4 u_GlobalRotateMatrix;
+void main() {
+  gl_Position = u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
   }`
-
+  
 // Fragment shader program
 var FSHADER_SOURCE = `
-  precision mediump float;
-  uniform vec4 u_FragColor;
-  void main() {
-    gl_FragColor = u_FragColor;
+precision mediump float;
+uniform vec4 u_FragColor;
+void main() {
+  gl_FragColor = u_FragColor;
   }`
+    
+// setup stats.js panel 
+var stats = new Stats();
+
+// move panel to right side instead of left
+// cuz our canvas will be covered
+stats.dom.style.left = "auto";
+stats.dom.style.right = "0";
+stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+document.body.appendChild(stats.dom);
+
 
 let canvas;
 let gl;
@@ -93,53 +104,58 @@ function main() {
   renderAllShapes();
 }
 
-var g_shapes_list = [];
+g_startTime = performance.now()/1000.0;
+g_seconds = performance.now()/1000.0 - g_startTime;
 
-// Constants
-const POINT = 0;
-const TRIANGLE = 1;
-const CIRCLE = 2;
+function tick() {
+
+  g_seconds = performance.now()/1000.0 - g_startTime;
+  console.log(g_seconds);
+
+  stats.begin();
+  renderAllShapes();
+  stats.end();
+
+  requestAnimationFrame(tick);
+}
+
+function updateAnimationAngles() {
+  if (g_animating) {
+    // update angles using the seconds from tick()
+  }
+}
+
 
 // Globals related to UI elements
-let g_selected_color = [1.0, 1.0, 1.0, 1.0];
-let g_selected_size= 10;
-let g_selected_type = POINT;
 let g_globalAngle = 0;
 
 function addActionsForHtmlUI() {
 
   // Clear button event
   document.getElementById('clear-button').addEventListener('mousedown', (e) => { gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); });
-  
-  // Paint picture event
-  document.getElementById('paint-button').addEventListener('mousedown', (e) => { drawPicture() });
-  
+    
   // Camera angle slider events
   document.getElementById('camera-angle-slider').addEventListener('mousemove', (e) => { 
     g_globalAngle = e.currentTarget.value; renderAllShapes(); });
+
+  // Joint angle slider events
+  document.getElementById('hip-angle-slider').addEventListener('mousemove', (e) => {
+    g_hipAngle = e.currentTarget.value; renderAllShapes();  });
+
+  document.getElementById('knee-angle-slider').addEventListener('mousemove', (e) => {
+    g_kneeAngle = e.currentTarget.value; renderAllShapes();  });
+    
+  document.getElementById('ankle-angle-slider').addEventListener('mousemove', (e) => {
+    g_ankleAngle = e.currentTarget.value; renderAllShapes();  });
 }
 
 function click(ev) {
   
   let [x, y] = convertCoordinatesEventToGL(ev);
 
-  let point;
-  if (g_selected_type==POINT) {
-    point = new Point();
-  } else if (g_selected_type==TRIANGLE) {
-    point = new Triangle();
-  } else {
-    point = new Circle();
-    point.segments = g_selected_segments;
-  }
-
-  point.position = [x, y];
-  point.color = g_selected_color.slice();
-  point.size = g_selected_size;
-  g_shapes_list.push(point);
-
   renderAllShapes();
 }
+
 
 function convertCoordinatesEventToGL(ev) {
   var x = ev.clientX; // x coordinate of a mouse pointer
@@ -154,7 +170,9 @@ function convertCoordinatesEventToGL(ev) {
 
 
 // global joint angles 
-let kneeRightAngle = 55;
+let g_hipAngle = 0;
+let g_kneeAngle = 0; 
+let g_ankleAngle = 0;
 
 function renderAllShapes() {
 
@@ -212,42 +230,53 @@ function renderAllShapes() {
   tail3.render();
 
   // draw legs 
-  leg1 = new Cube();
+  let legH = 0.2;
+  let leg1 = new Cube();
   leg1.color = [0.5,0.35,0.05,1.0];
-  leg1.matrix.setTranslate(-0.25, -0.1, -0.10);
-  leg1.matrix.rotate(25, 0, 1, 0);
+  leg1.matrix.setTranslate(-0.4, -0.2, -0.07);
+  leg1.matrix.translate(0, legH, 0);          
+  leg1.matrix.rotate(g_hipAngle, 0, 0, 1);  
   leg1.matrix.rotate(55, 0, 0, 1);
-  leg1.matrix.scale(0.10, 0.20, 0.07);
+  leg1.matrix.translate(0, -legH, 0);        
+  let leg1CoordinatesMat = new Matrix4(leg1.matrix);
+  leg1.matrix.scale(0.10, legH, 0.07);
   leg1.render();
+
 
   foreleg1 = new Cube();
   foreleg1.color = [0.5,0.25,0.05,1.0];
-  foreleg1.matrix.setTranslate(-0.32, -0.1, -0.08);
-  foreleg1.matrix.rotate(20, 0, 1, 0);
-  foreleg1.matrix.rotate(-35, 0, 0, 1);
+  foreleg1.matrix = leg1CoordinatesMat;
+  foreleg1.matrix.translate(0.1, -0.08, 0.01);
+  foreleg1.matrix.translate(0, 0.15, 0);
+  foreleg1.matrix.rotate(-g_kneeAngle, 0, 0, 1);
+  foreleg1.matrix.rotate(-90, 0, 0, 1);
+  foreleg1.matrix.translate(0, -0.15, 0);
+  let foreleg1CoordinatesMat = new Matrix4(foreleg1.matrix);
   foreleg1.matrix.scale(0.10, 0.15, 0.07);
   foreleg1.render();
   
   foot1 = new Cube();
   foot1.color = [0.3,0.15,0.02,1.0];
-  foot1.matrix.setTranslate(-0.36, -0.13, -0.06);
-  foot1.matrix.rotate(15, 0, 1, 0);
-  foot1.matrix.rotate(-35, 0, 0, 1);
+  foot1.matrix = foreleg1CoordinatesMat;
+  foot1.matrix.rotate(-g_ankleAngle, 0, 0, 1);
+  foot1.matrix.translate(0, -0.02, 0.01);
   foot1.matrix.scale(0.15, 0.05, 0.07);
   foot1.render();
 
+
   leg2 = new Cube();
   leg2.color = [0.5,0.35,0.05,1.0];
-  leg2.matrix.setTranslate(-0.25, -0.1, 0.5);
-  leg2.matrix.rotate(-25, 0, 1, 0);
+  leg2.matrix.setTranslate(-0.4, -0.2, 0.5);
+  leg2.matrix.translate(0, legH, 0);          
+  // leg2.matrix.rotate(g_kneeRightAngle, 0, 0, 1);
   leg2.matrix.rotate(55, 0, 0, 1);
+  leg2.matrix.translate(0, -legH, 0);         
   leg2.matrix.scale(0.10, 0.20, 0.07);
   leg2.render();
 
   foreleg2 = new Cube();
   foreleg2.color = [0.5,0.25,0.05,1.0];
   foreleg2.matrix.setTranslate(-0.32, -0.1, 0.48);
-  foreleg2.matrix.rotate(-20, 0, 1, 0);
   foreleg2.matrix.rotate(-35, 0, 0, 1);
   foreleg2.matrix.scale(0.10, 0.15, 0.07);
   foreleg2.render();  
@@ -255,7 +284,6 @@ function renderAllShapes() {
   foot2 = new Cube();
   foot2.color = [0.3,0.15,0.02,1.0];
   foot2.matrix.setTranslate(-0.36, -0.13, 0.46);
-  foot2.matrix.rotate(-15, 0, 1, 0);
   foot2.matrix.rotate(-35, 0, 0, 1);
   foot2.matrix.scale(0.15, 0.05, 0.07);
   foot2.render();
@@ -304,6 +332,8 @@ function renderAllShapes() {
 }
 
 
+
+
 // extra
 function setColor([r, g, b, a]) {
   gl.uniform4f(u_FragColor, r, g, b, a);
@@ -313,46 +343,3 @@ const RED = [1.0, 0.0, 0.0, 1.0];
 const GREEN = [0.0, 0.5, 0.0, 1.0];
 const PURPLE = [0.5, 0.0, 0.5, 1.0];
 const BLACK = [0.0, 0.0, 0.0, 1.0];
-
-function drawPicture() {
-  // butt
-  setColor(PURPLE);
-  drawTriangle([-0.8, 0.0,  -0.8, 0.2,  -0.9, 0.1]);
-  drawTriangle([-0.8, 0.0,  -0.8, -0.2,   -0.9, -0.1]);
-  
-  drawTriangle([-0.8, 0.2,  -0.8, -0.2,   -0.6, -0.2]);
-  drawTriangle([-0.8, 0.2,   -0.6, 0.2,   -0.6, -0.2]);
-  
-  drawTriangle([-0.8, 0.2,  -0.6, 0.2,  -0.6, 0.4]);
-  drawTriangle([-0.8, -0.2,  -0.6, -0.2,  -0.6, -0.4]);
-  
-  // body
-  drawTriangle([-0.6, 0.4,  -0.6, -0.4,   0.2, -0.4]);
-  drawTriangle([-0.6, 0.4,  0.2, 0.4,   0.2, -0.4]);
-  
-  // head
-  drawTriangle([0.2, 0.4,   0.2, 0.2,   0.6, 0.2]);
-  drawTriangle([0.2, 0.2,   0.6, 0.2,   0.6, -0.2]);
-  drawTriangle([0.6, -0.2,  0.2, -0.2,  0.2, 0.2]);
-  
-  // mouth
-  drawTriangle([0.2, -0.2,  0.2, -0.4,  0.55, -0.3]);
-  drawTriangle([0.2, -0.2,  0.6, -0.2,  0.55, -0.25]);
-  
-  // top fin
-  setColor(GREEN);
-  drawTriangle([-0.6, 0.4,  -0.2, 0.4,  -0.4, 0.5]);
-  drawTriangle([-0.4, 0.5, -0.2, 0.4,   0, 0.5]);
-  drawTriangle([-0.2, 0.4,  0, 0.5,   0.2, 0.4]);
-  
-  // tail
-  drawTriangle([-1.0, 0.0,  -0.8, 0.0,  -1.0, 0.2]);
-  drawTriangle([-1.0, 0.0,  -0.8, 0.0,  -1.0, -0.2]);
-
-  // side fin
-  drawTriangle([-0.2, -0.1,   -0.2, -0.2,  -0.38, -0.15]);
-
-  // eye
-  setColor(BLACK);
-  drawTriangle([0.4, 0.04,  0.4, 0.08,  0.45, 0.06]);
-}

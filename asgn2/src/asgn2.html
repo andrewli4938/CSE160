@@ -18,6 +18,7 @@
     <script src="../lib/webgl-debug.js"></script>
     <script src="../lib/cuon-utils.js"></script>
     <script src="../lib/cuon-matrix.js"></script>
+    <script src="../lib/stats.min.js"></script>
     <script src="asgn2.js"></script>
     <script src="Point.js"></script>
     <script src="Triangle.js"></script>
@@ -25,13 +26,23 @@
     <script src="Cube.js"></script>
 
     <br><br>
-    <button type="button" id="paint-button">Paint Reference Drawing</button>
     <button type="button" id="clear-button">Clear</button>
 
     <br><br>
     <label for="camera-angle-slider">Camera Angle:</label>
     <input id="camera-angle-slider" type="range" min="-90" max="135" value="0">
 
+    <br><br>
+    <label for="hip-angle-slider">Hip Angle:</label>
+    <input id="hip-angle-slider" type="range" min="-45" max="45" value="0">
+
+    <br>
+    <label for="knee-angle-slider">Knee Angle:</label>
+    <input id="knee-angle-slider" type="range" min="-15" max="45" value="0">
+
+    <br>
+    <label for="ankle-angle-slider">Ankle Angle:</label>
+    <input id="ankle-angle-slider" type="range" min="-15" max="45" value="0">
 
   </body>
 </html>
