@@ -95,9 +95,10 @@ function main() {
 
   // Register function (event handler) to be called on a mouse press
   canvas.onmousedown = click;
-  canvas.onmousemove = (ev) => { if (ev.buttons == 1) { click(ev) } };
+  canvas.onmousemove = (ev) => { if (ev.buttons == 1) { click(ev); g_dragging = true } else { g_dragging = false }};
 
-  
+  canvas.onmousedown = (ev) => { if (ev.shiftKey) { ev.preventDefault(); ev.stopPropagation(); print("SHIFTCLICK"); } };
+
   // Specify the color for clearing <canvas>
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   
@@ -123,6 +124,7 @@ function tick() {
 }
 
 let g_animating = false;
+let g_dragging = false;
 function updateAnimationAngles() {
   if (g_animating) {
     const w = 2 * Math.PI * 1.2; // 1.2 cycles per second
@@ -135,19 +137,16 @@ function updateAnimationAngles() {
     g_elbowAngle = (Math.sin(g_seconds*w + Math.PI + 1.2)*20);
     g_wristAngle = (Math.sin(g_seconds*w + Math.PI + 2)*10); 
 
-    g_tailAngle = (Math.sin(g_seconds*w)*5);
+    g_tailAngle = (Math.sin(g_seconds*w)*7);
   }
 }
 
 
 // Globals related to UI elements
 let g_globalAngle = 0;
-
-function addActionsForHtmlUI() {
-
-  // Clear button event
-  document.getElementById('clear-button').addEventListener('mousedown', (e) => { gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); });
-    
+let g_mouseRotX = 0;
+let g_mouseRotY = 0;
+function addActionsForHtmlUI() {    
   // Camera angle slider events
   document.getElementById('camera-angle-slider').addEventListener('mousemove', (e) => { 
     g_globalAngle = e.currentTarget.value; renderAllShapes(); });
@@ -179,6 +178,8 @@ function addActionsForHtmlUI() {
 function click(ev) {
   
   let [x, y] = convertCoordinatesEventToGL(ev);
+  g_mouseRotY = -x * 180;   
+  g_mouseRotX = y * 90;   
 
   renderAllShapes();
 }
@@ -203,12 +204,17 @@ let g_ankleAngle = 0;
 let g_shoulderAngle = 0;
 let g_elbowAngle = 0;
 let g_wristAngle = 0;
-
 let g_tailAngle = 0;
 function renderAllShapes() {
 
   // Pass rotation matrix to u_GlobalRotateMatrix
-  let globalRotateMatrix = new Matrix4().rotate(g_globalAngle, 0, 1, 0);
+  let globalRotateMatrix = new Matrix4();
+  if (g_dragging) {
+    globalRotateMatrix.rotate(g_mouseRotX, 1, 0, 0);
+    globalRotateMatrix.rotate(g_mouseRotY, 0, 1, 0); 
+  } else {
+    globalRotateMatrix.rotate(g_globalAngle, 0, 1, 0);
+  }
   gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotateMatrix.elements);
 
   // Clear <canvas>
@@ -216,27 +222,26 @@ function renderAllShapes() {
   
   // draw body cube 
   let body = new Cube();
-  body.color = [1.0,0.0,0.0,1.0];
-  // body.matrix.rotate(g_seconds, 1, 0, 0);
+  body.color = [0.22, 0.32, 0.20, 1.0];
   body.matrix.translate(-0.4, 0, 0);
   body.matrix.scale(0.8, 0.3, 0.5);
   body.render();
 
   // draw head cubes
   let head1 = new Cube();
-  head1.color = [1.0, 0.8, 0.6, 1.0];
+  head1.color = [0.16, 0.22, 0.13, 1.0];
   head1.matrix.setTranslate(0.4, 0.28, 0);
   head1.matrix.scale(0.2, 0.15, 0.5);
   head1.render();
 
   let jawUp = new Cube();
-  jawUp.color = [1.0, 0.8, 0.3, 1.0];
+  jawUp.color = [0.16, 0.22, 0.13, 1.0];
   jawUp.matrix.setTranslate(0.4, 0.18, 0);
   jawUp.matrix.scale(0.6, 0.1, 0.5);
   jawUp.render();
 
   let jawBottom = new Cube();
-  jawBottom.color = [0.0, 0.8, 0.0, 1.0];
+  jawBottom.color = [0.16, 0.22, 0.13, 1.0];
   jawBottom.matrix.setTranslate(0.39, 0.08, 0);
   jawBottom.matrix.rotate(-5, 0, 0, 1)
   jawBottom.matrix.scale(0.6, 0.1, 0.5);
@@ -244,7 +249,7 @@ function renderAllShapes() {
 
   // draw tail 
   let tail1 = new Cube();
-  tail1.color = [1.0,1.0,0.0,1.0];
+  tail1.color = [0.18, 0.24, 0.14, 1.0];
   tail1.matrix.setTranslate(-0.4, 0.1, 0);
   tail1.matrix.rotate(g_tailAngle, 0, 1, 0);
   tail1.matrix.translate(-0.2, 0, 0);
@@ -253,7 +258,7 @@ function renderAllShapes() {
   tail1.render();
 
   let tail2 = new Cube();
-  tail2.color = [1.0,0.5,0.0,1.0];
+  tail2.color = [0.18, 0.24, 0.14, 1.0];
   tail2.matrix = tail1CoordinatesMat;
   tail2.matrix.translate(0, 0.03, 0.05);
   tail2.matrix.rotate(g_tailAngle, 0, 1, 0);
@@ -263,7 +268,7 @@ function renderAllShapes() {
   tail2.render();
 
   let tail3 = new Cube();
-  tail3.color = [0.0,0.5,0.0,1.0];
+  tail3.color = [0.18, 0.24, 0.14, 1.0];
   tail3.matrix = tail2CoordinatesMat;
   tail3.matrix.translate(0, 0.02, 0.05);
   tail3.matrix.rotate(-g_tailAngle, 0, 1, 0);
@@ -274,7 +279,7 @@ function renderAllShapes() {
   // draw legs 
   let legH = 0.2;
   let leg1 = new Cube();
-  leg1.color = [0.5,0.35,0.05,1.0];
+  leg1.color = [0.18, 0.26, 0.16, 1.0];
   leg1.matrix.setTranslate(-0.4, -0.2, -0.07);
   leg1.matrix.translate(0, legH, 0);          
   leg1.matrix.rotate(g_hipAngle, 0, 0, 1);  
@@ -286,7 +291,7 @@ function renderAllShapes() {
 
 
   foreleg1 = new Cube();
-  foreleg1.color = [0.5,0.25,0.05,1.0];
+  foreleg1.color = [0.18, 0.26, 0.16, 1.0];
   foreleg1.matrix = leg1CoordinatesMat;
   foreleg1.matrix.translate(0.1, -0.08, 0.01);
   foreleg1.matrix.translate(0, 0.15, 0);
@@ -306,7 +311,7 @@ function renderAllShapes() {
   foot1.render();
 
   leg2 = new Cube();
-  leg2.color = [0.5,0.35,0.05,1.0];
+  leg2.color = [0.18, 0.26, 0.16, 1.0];
   leg2.matrix.setTranslate(-0.4, -0.2, 0.5);
   leg2.matrix.translate(0, legH, 0);          
   leg2.matrix.rotate(-g_hipAngle, 0, 0, 1);
@@ -317,7 +322,7 @@ function renderAllShapes() {
   leg2.render();
 
   foreleg2 = new Cube();
-  foreleg2.color = [0.5,0.25,0.05,1.0];
+  foreleg2.color = [0.18, 0.26, 0.16, 1.0];
   foreleg2.matrix = leg2CoordinatesMat;
   foreleg2.matrix.translate(0.1, -0.08, 0.01);
   foreleg2.matrix.translate(0, 0.15, 0);
@@ -338,7 +343,7 @@ function renderAllShapes() {
 
   armH = 0.18;
   arm1 = new Cube();
-  arm1.color = [0.5,0.35,0.05,1.0];
+  arm1.color = [0.18, 0.26, 0.16, 1.0];
   arm1.matrix.setTranslate(0.18, -0.08, -0.07);
   arm1.matrix.translate(0, armH, 0);
   arm1.matrix.rotate(-g_shoulderAngle, 0, 0, 1);
@@ -349,7 +354,7 @@ function renderAllShapes() {
   arm1.render();
 
   forearm1 = new Cube();
-  forearm1.color = [0.5,0.25,0.05,1.0];
+  forearm1.color = [0.18, 0.26, 0.16, 1.0];
   forearm1.matrix = arm1CoordinatesMat;
   forearm1.matrix.translate(0, -0.1, -0.01);
   forearm1.matrix.translate(0, 0.13, 0);
@@ -370,7 +375,7 @@ function renderAllShapes() {
   hand1.render();
 
   arm2 = new Cube();
-  arm2.color = [0.5,0.35,0.05,1.0];
+  arm2.color = [0.18, 0.26, 0.16, 1.0];
   arm2.matrix.setTranslate(0.18, -0.08, 0.5);
   arm2.matrix.translate(0, armH, 0);
   arm2.matrix.rotate(g_shoulderAngle, 0, 0, 1);
@@ -381,7 +386,7 @@ function renderAllShapes() {
   arm2.render();  
 
   forearm2 = new Cube();
-  forearm2.color = [0.5,0.25,0.05,1.0];
+  forearm2.color = [0.18, 0.26, 0.16, 1.0];
   forearm2.matrix = arm2CoordinatesMat;
   forearm2.matrix.translate(0, -0.1, 0.01);
   forearm2.matrix.translate(0, 0.13, 0);
@@ -399,16 +404,3 @@ function renderAllShapes() {
   hand2.matrix.scale(0.15, 0.05, 0.07);
   hand2.render();
 }
-
-
-
-
-// extra
-function setColor([r, g, b, a]) {
-  gl.uniform4f(u_FragColor, r, g, b, a);
-}
-
-const RED = [1.0, 0.0, 0.0, 1.0];
-const GREEN = [0.0, 0.5, 0.0, 1.0];
-const PURPLE = [0.5, 0.0, 0.5, 1.0];
-const BLACK = [0.0, 0.0, 0.0, 1.0];
