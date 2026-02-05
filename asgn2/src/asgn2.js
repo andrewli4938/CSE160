@@ -101,7 +101,9 @@ function main() {
   // Specify the color for clearing <canvas>
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   
-  renderAllShapes();
+  // draw the scene
+  // renderAllShapes();
+  tick();
 }
 
 g_startTime = performance.now()/1000.0;
@@ -110,18 +112,30 @@ g_seconds = performance.now()/1000.0 - g_startTime;
 function tick() {
 
   g_seconds = performance.now()/1000.0 - g_startTime;
-  console.log(g_seconds);
+  // console.log(g_seconds);
 
   stats.begin();
+  updateAnimationAngles();
   renderAllShapes();
   stats.end();
 
   requestAnimationFrame(tick);
 }
 
+let g_animating = false;
 function updateAnimationAngles() {
   if (g_animating) {
-    // update angles using the seconds from tick()
+    const w = 2 * Math.PI * 1.2; // 1.2 cycles per second
+
+    g_hipAngle = (Math.sin(g_seconds*w)*30);
+    g_kneeAngle = (Math.sin(g_seconds*w + 1.2)*30);
+    g_ankleAngle = (-Math.sin(g_seconds*w + 2)*30);  
+
+    g_shoulderAngle = (-Math.sin(g_seconds*w + Math.PI)*20);
+    g_elbowAngle = (Math.sin(g_seconds*w + Math.PI + 1.2)*20);
+    g_wristAngle = (Math.sin(g_seconds*w + Math.PI + 2)*10); 
+
+    g_tailAngle = (Math.sin(g_seconds*w)*5);
   }
 }
 
@@ -147,6 +161,19 @@ function addActionsForHtmlUI() {
     
   document.getElementById('ankle-angle-slider').addEventListener('mousemove', (e) => {
     g_ankleAngle = e.currentTarget.value; renderAllShapes();  });
+
+  document.getElementById('shoulder-angle-slider').addEventListener('mousemove', (e) => {
+    g_shoulderAngle = e.currentTarget.value; renderAllShapes();  });
+
+  document.getElementById('elbow-angle-slider').addEventListener('mousemove', (e) => {
+    g_elbowAngle = e.currentTarget.value; renderAllShapes();  });
+
+  document.getElementById('wrist-angle-slider').addEventListener('mousemove', (e) => {
+    g_wristAngle = e.currentTarget.value; renderAllShapes();  }); 
+
+  // animation buttons
+  document.getElementById('animate-on').addEventListener('mousedown', (e) => { g_animating = true; });
+  document.getElementById('animate-off').addEventListener('mousedown', (e) => { g_animating = false; });
 }
 
 function click(ev) {
@@ -165,7 +192,7 @@ function convertCoordinatesEventToGL(ev) {
   x = ((x - rect.left) - canvas.width/2)/(canvas.width/2);
   y = (canvas.height/2 - (y - rect.top))/(canvas.height/2);
 
-  return [x, y];
+  return [x, y]; 
 }
 
 
@@ -173,7 +200,11 @@ function convertCoordinatesEventToGL(ev) {
 let g_hipAngle = 0;
 let g_kneeAngle = 0; 
 let g_ankleAngle = 0;
+let g_shoulderAngle = 0;
+let g_elbowAngle = 0;
+let g_wristAngle = 0;
 
+let g_tailAngle = 0;
 function renderAllShapes() {
 
   // Pass rotation matrix to u_GlobalRotateMatrix
@@ -186,7 +217,8 @@ function renderAllShapes() {
   // draw body cube 
   let body = new Cube();
   body.color = [1.0,0.0,0.0,1.0];
-  body.matrix.setTranslate(-0.4, 0, 0);
+  // body.matrix.rotate(g_seconds, 1, 0, 0);
+  body.matrix.translate(-0.4, 0, 0);
   body.matrix.scale(0.8, 0.3, 0.5);
   body.render();
 
@@ -213,19 +245,29 @@ function renderAllShapes() {
   // draw tail 
   let tail1 = new Cube();
   tail1.color = [1.0,1.0,0.0,1.0];
-  tail1.matrix.setTranslate(-0.6, 0.1, 0);
+  tail1.matrix.setTranslate(-0.4, 0.1, 0);
+  tail1.matrix.rotate(g_tailAngle, 0, 1, 0);
+  tail1.matrix.translate(-0.2, 0, 0);
+  let tail1CoordinatesMat = new Matrix4(tail1.matrix);
   tail1.matrix.scale(0.2, 0.2, 0.5);
   tail1.render();
 
   let tail2 = new Cube();
   tail2.color = [1.0,0.5,0.0,1.0];
-  tail2.matrix.setTranslate(-0.8, 0.12, 0.05);
+  tail2.matrix = tail1CoordinatesMat;
+  tail2.matrix.translate(0, 0.03, 0.05);
+  tail2.matrix.rotate(g_tailAngle, 0, 1, 0);
+  tail2.matrix.translate(-0.2, 0, 0);
+  let tail2CoordinatesMat = new Matrix4(tail2.matrix);
   tail2.matrix.scale(0.2, 0.15, 0.4);
   tail2.render();
 
   let tail3 = new Cube();
   tail3.color = [0.0,0.5,0.0,1.0];
-  tail3.matrix.setTranslate(-1, 0.13, 0.1);
+  tail3.matrix = tail2CoordinatesMat;
+  tail3.matrix.translate(0, 0.02, 0.05);
+  tail3.matrix.rotate(-g_tailAngle, 0, 1, 0);
+  tail3.matrix.translate(-0.2, 0, 0);
   tail3.matrix.scale(0.2, 0.11, 0.3);
   tail3.render();
 
@@ -263,70 +305,97 @@ function renderAllShapes() {
   foot1.matrix.scale(0.15, 0.05, 0.07);
   foot1.render();
 
-
   leg2 = new Cube();
   leg2.color = [0.5,0.35,0.05,1.0];
   leg2.matrix.setTranslate(-0.4, -0.2, 0.5);
   leg2.matrix.translate(0, legH, 0);          
-  // leg2.matrix.rotate(g_kneeRightAngle, 0, 0, 1);
+  leg2.matrix.rotate(-g_hipAngle, 0, 0, 1);
   leg2.matrix.rotate(55, 0, 0, 1);
-  leg2.matrix.translate(0, -legH, 0);         
+  leg2.matrix.translate(0, -legH, 0);
+  let leg2CoordinatesMat = new Matrix4(leg2.matrix);
   leg2.matrix.scale(0.10, 0.20, 0.07);
   leg2.render();
 
   foreleg2 = new Cube();
   foreleg2.color = [0.5,0.25,0.05,1.0];
-  foreleg2.matrix.setTranslate(-0.32, -0.1, 0.48);
-  foreleg2.matrix.rotate(-35, 0, 0, 1);
+  foreleg2.matrix = leg2CoordinatesMat;
+  foreleg2.matrix.translate(0.1, -0.08, 0.01);
+  foreleg2.matrix.translate(0, 0.15, 0);
+  foreleg2.matrix.rotate(g_kneeAngle, 0, 0, 1);
+  foreleg2.matrix.rotate(-90, 0, 0, 1);
+  foreleg2.matrix.translate(0, -0.15, 0);
+  let foreleg2CoordinatesMat = new Matrix4(foreleg2.matrix);
   foreleg2.matrix.scale(0.10, 0.15, 0.07);
   foreleg2.render();  
 
   foot2 = new Cube();
   foot2.color = [0.3,0.15,0.02,1.0];
-  foot2.matrix.setTranslate(-0.36, -0.13, 0.46);
-  foot2.matrix.rotate(-35, 0, 0, 1);
+  foot2.matrix = foreleg2CoordinatesMat;
+  foot2.matrix.rotate(g_ankleAngle, 0, 0, 1);
+  foot2.matrix.rotate(0, 0, 0, 1);
   foot2.matrix.scale(0.15, 0.05, 0.07);
   foot2.render();
 
+  armH = 0.18;
   arm1 = new Cube();
   arm1.color = [0.5,0.35,0.05,1.0];
-  arm1.matrix.setTranslate(0.1, -0.05, -0.07);
+  arm1.matrix.setTranslate(0.18, -0.08, -0.07);
+  arm1.matrix.translate(0, armH, 0);
+  arm1.matrix.rotate(-g_shoulderAngle, 0, 0, 1);
   arm1.matrix.rotate(-30, 0, 0, 1);
+  arm1.matrix.translate(0, -armH, 0);
+  let arm1CoordinatesMat = new Matrix4(arm1.matrix);
   arm1.matrix.scale(0.10, 0.18, 0.07);
   arm1.render();
 
   forearm1 = new Cube();
   forearm1.color = [0.5,0.25,0.05,1.0];
-  forearm1.matrix.setTranslate(0.15, -0.18, -0.07);
-  forearm1.matrix.rotate(15, 0, 0, 1);
+  forearm1.matrix = arm1CoordinatesMat;
+  forearm1.matrix.translate(0, -0.1, -0.01);
+  forearm1.matrix.translate(0, 0.13, 0);
+  forearm1.matrix.rotate(g_elbowAngle, 0, 0, 1);
+  forearm1.matrix.rotate(45, 0, 0, 1);
+  forearm1.matrix.translate(0, -0.13, 0);
+  let forearm1CoordinatesMat = new Matrix4(forearm1.matrix);
   forearm1.matrix.scale(0.10, 0.13, 0.07);
   forearm1.render();  
 
   hand1 = new Cube();
   hand1.color = [0.3,0.15,0.02,1.0];
-  hand1.matrix.setTranslate(0.15, -0.22, -0.07);
+  hand1.matrix = forearm1CoordinatesMat;
+  hand1.matrix.translate(0, -0.02, -0.01);
+  hand1.matrix.rotate(g_wristAngle, 0, 0, 1);
   hand1.matrix.rotate(15, 0, 0, 1);
   hand1.matrix.scale(0.15, 0.05, 0.07);
   hand1.render();
 
   arm2 = new Cube();
   arm2.color = [0.5,0.35,0.05,1.0];
-  arm2.matrix.setTranslate(0.1, -0.05, 0.5);
+  arm2.matrix.setTranslate(0.18, -0.08, 0.5);
+  arm2.matrix.translate(0, armH, 0);
+  arm2.matrix.rotate(g_shoulderAngle, 0, 0, 1);
   arm2.matrix.rotate(-30, 0, 0, 1);
+  arm2.matrix.translate(0, -armH, 0);
+  let arm2CoordinatesMat = new Matrix4(arm2.matrix);
   arm2.matrix.scale(0.10, 0.18, 0.07);
   arm2.render();  
 
   forearm2 = new Cube();
   forearm2.color = [0.5,0.25,0.05,1.0];
-  forearm2.matrix.setTranslate(0.15, -0.18, 0.5);
-  forearm2.matrix.rotate(15, 0, 0, 1);
+  forearm2.matrix = arm2CoordinatesMat;
+  forearm2.matrix.translate(0, -0.1, 0.01);
+  forearm2.matrix.translate(0, 0.13, 0);
+  forearm2.matrix.rotate(-g_elbowAngle, 0, 0, 1);
+  forearm2.matrix.rotate(45, 0, 0, 1);
+  forearm2.matrix.translate(0, -0.13, 0);
+  let forearm2CoordinatesMat = new Matrix4(forearm2.matrix);
   forearm2.matrix.scale(0.10, 0.13, 0.07);
   forearm2.render();
 
   hand2 = new Cube();
   hand2.color = [0.3,0.15,0.02,1.0];
-  hand2.matrix.setTranslate(0.15, -0.22, 0.5);
-  hand2.matrix.rotate(15, 0, 0, 1);
+  hand2.matrix = forearm2CoordinatesMat;
+  hand2.matrix.rotate(-g_wristAngle, 0, 0, 1);
   hand2.matrix.scale(0.15, 0.05, 0.07);
   hand2.render();
 }
