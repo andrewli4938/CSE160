@@ -94,10 +94,19 @@ function main() {
   addActionsForHtmlUI();
 
   // Register function (event handler) to be called on a mouse press
-  canvas.onmousedown = click;
+  canvas.onmousedown = (ev) => {
+     if (ev.shiftKey) { 
+      ev.preventDefault(); 
+      poke();
+      console.log("SHIFTCLICK"); 
+    } 
+    
+    click(ev);
+  };
+
+  // canvas.onmousedown = click;
   canvas.onmousemove = (ev) => { if (ev.buttons == 1) { click(ev); g_dragging = true } else { g_dragging = false }};
 
-  canvas.onmousedown = (ev) => { if (ev.shiftKey) { ev.preventDefault(); ev.stopPropagation(); print("SHIFTCLICK"); } };
 
   // Specify the color for clearing <canvas>
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -125,6 +134,7 @@ function tick() {
 
 let g_animating = false;
 let g_dragging = false;
+let g_poke = false;
 function updateAnimationAngles() {
   if (g_animating) {
     const w = 2 * Math.PI * 1.2; // 1.2 cycles per second
@@ -138,6 +148,10 @@ function updateAnimationAngles() {
     g_wristAngle = (Math.sin(g_seconds*w + Math.PI + 2)*10); 
 
     g_tailAngle = (Math.sin(g_seconds*w)*7);
+
+    g_jawAngle = (Math.sin(g_seconds*w)*7);
+  } else if (g_poke) {
+    
   }
 }
 
@@ -184,6 +198,9 @@ function click(ev) {
   renderAllShapes();
 }
 
+function poke() {
+  g_poke = true;
+}
 
 function convertCoordinatesEventToGL(ev) {
   var x = ev.clientX; // x coordinate of a mouse pointer
@@ -198,6 +215,9 @@ function convertCoordinatesEventToGL(ev) {
 
 
 // global joint angles 
+g_pokeHead = 0;
+g_pokeTail = 0;
+
 let g_hipAngle = 0;
 let g_kneeAngle = 0; 
 let g_ankleAngle = 0;
@@ -205,6 +225,7 @@ let g_shoulderAngle = 0;
 let g_elbowAngle = 0;
 let g_wristAngle = 0;
 let g_tailAngle = 0;
+let g_jawAngle = 0;
 function renderAllShapes() {
 
   // Pass rotation matrix to u_GlobalRotateMatrix
@@ -220,6 +241,12 @@ function renderAllShapes() {
   // Clear <canvas>
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   
+  let cyl= new Cylinder();
+  cyl.color = [1, 0, 0, 1];
+  cyl.matrix.translate(0, -0.5, 0);
+  cyl.matrix.scale(1, 2, 1);
+  cyl.render();
+
   // draw body cube 
   let body = new Cube();
   body.color = [0.22, 0.32, 0.20, 1.0];
@@ -231,18 +258,21 @@ function renderAllShapes() {
   let head1 = new Cube();
   head1.color = [0.16, 0.22, 0.13, 1.0];
   head1.matrix.setTranslate(0.4, 0.28, 0);
+  head1.matrix.rotate(g_jawAngle, 0, 0, 1);
   head1.matrix.scale(0.2, 0.15, 0.5);
   head1.render();
 
   let jawUp = new Cube();
   jawUp.color = [0.16, 0.22, 0.13, 1.0];
   jawUp.matrix.setTranslate(0.4, 0.18, 0);
+  jawUp.matrix.rotate(g_jawAngle, 0, 0, 1);
   jawUp.matrix.scale(0.6, 0.1, 0.5);
   jawUp.render();
 
   let jawBottom = new Cube();
   jawBottom.color = [0.16, 0.22, 0.13, 1.0];
   jawBottom.matrix.setTranslate(0.39, 0.08, 0);
+  jawBottom.matrix.rotate(g_jawAngle, 0, 0, 1);
   jawBottom.matrix.rotate(-5, 0, 0, 1)
   jawBottom.matrix.scale(0.6, 0.1, 0.5);
   jawBottom.render();
